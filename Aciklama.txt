@@ -1,4 +1,4 @@
 ﻿Bilge Adam YAzilim Dersleri 1. Gün
 git üzerinden yapılan degısıklıkler
 sgl ve .net eğitimi
-
+yazılım günleri vol1
