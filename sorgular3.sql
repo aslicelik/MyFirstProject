@@ -422,7 +422,189 @@ select OrderID, Sum (Quantity) as Urunsayisi  from [Order Details] group by Orde
 --ÖDEVLER
 
 --Toplam tutarı 2500 ıle 3500 arasında olan siparişlerin gruplanması
+
+select  OrderID, cast(SUM(Quantity * Unitprice *(1-Discount))  as decimal (15,3))  as toplam 
+ from  [Order Details] 
+ --WHERE SUM (Quantity * Unitprice *(1-Discount)) BETWEEN 2500 AND 3500
+  GROUP BY OrderID 
+ HAVING SUM ( Quantity * Unitprice * (1-Discount)) BETWEEN 2500 AND 3500 
+ ORDER BY 2;
+
+
+
 -- her bır sıparıstekı toplam urun sayısı 200 den az olanlar
+
+select  OrderID, SUM (Quantity) as adet  from [Order Details]
+group by OrderID
+HAVING SUM  (Quantity) <=200
+order by 2;
+
 --kategorılerıne gore toplam stok mıktarını bul
+
+select CategoryName, SUM(UnitsInStock) as ToplamStokAdedi  
+ from Categories  as C JOIN Products as P on C.CategoryID=P.CategoryID
+group by CategoryName
+order by 2;
+
+select C.CategoryID, Description, SUM(UnitsInStock) as ToplamStokAdedi  
+ from Categories  as C JOIN Products as P on C.CategoryID=P.CategoryID
+group by   C.CategoryID, CategoryName, Description
+order by 2;
+
 --her bır calısan toplam ne kadarlık satıs yapmıstır
 
+select CONCAT (E.FirstName ,' ', E.Lastname) as Personel , CAST (SUM (Quantity * Unitprice * (1-Discount)) 
+AS DECIMAL (15,3)) AS [Toplam Yapılan Sipariş Tutarı]
+ from Employees AS E JOIN Orders AS O ON E.EmployeeID=O.EmployeeID
+ JOIN [Order Details] AS OD ON OD.OrderID=O.OrderID
+ GROUP BY CONCAT (E.Firstname ,' ', E.Lastname)
+ ORDER BY 2;
+
+
+ --stored procedure (Saklı Yordamlar)
+
+
+
+ create procedure Kategoriler_SP
+ as select * from Categories           ---burdaki view gıbı ıslem gorur create proceude.sonra programmabılıty stored procedure içine Kategoriler_SP gelır refresh.sonra alttakı.
+
+
+ execute Kategoriler_SP
+
+ create proc UrunlerByCategory
+ as
+ select * from Products where CategoryID=1
+ exec UrunlerByCategory
+
+alter  proc UrunlerByCategory 
+@Id int 
+                                         
+ as
+ select * from Products where CategoryID=@Id
+ exec UrunlerByCategory 5
+
+ -- alter duzenleme dır
+
+ --Adının ılk harfıne gore personellerı lısteleyen sp yazınız.--once basitce yaz.select* from empl. sonra ıcerısını yaz.ilk create ıle yap.baktın hata verıo duzenleme alter yaz create ın yerıne
+
+ create proc PersonelByName
+ @name nvarchar as 
+
+select  FirstName,LastName,BirthDate from Employees where FirstName like @name +'%';    bu 1.
+
+
+execute PersonelByName 'a';                                                             bu 2.
+
+
+
+alter  proc PersonelByName
+ @name nvarchar as 
+
+select  FirstName,LastName,BirthDate from Employees where FirstName like @name +'%';   
+
+
+execute PersonelByName 'a' ;
+
+--Procedure üzerinde değişiklik yapmak için Create yerine alter anahtar kelımesını eklemek yeterlı.
+
+--Customers tablosundaki tum alanlara ekleme yapan sp yazınız:
+
+create proc MusteriEke_sp
+
+ @CustomerID nchar (5),
+ @companyName nvarchar (40),
+ @ContactName nvarchar (30),
+ @ContactTitle nvarchar (30),
+ @Address nvarchar (60),
+ @City nvarchar (15),
+ @Region nvarchar (15),
+@PostalCode nvarchar (10),
+ @Country nvarchar (15),
+ @Phone nvarchar (24),
+@Fax nvarchar (24)
+as
+BEGIN
+ insert into Customers
+ values (
+
+@CustomerID,@CompanyName, @ContactName, @ContactTitle, @Address, @City, @Region, @PostalCode, @Country, @Phone,@Fax)
+
+END;
+
+--TUM ALANLARA EKLEM YAPCAMIZ ICIN CUSTOMERS YAZDIK. yoksa customers (CustomerId vs vs )
+--values a da aynılarını gir.
+
+alter proc MusteriEke_sp
+
+ @CustomerID nchar (5),
+ @companyName nvarchar (40)= null
+ @ContactName nvarchar (30)= null,
+ @ContactTitle nvarchar (30)= null,
+ @Address nvarchar (60)= null,
+ @City nvarchar (15)= null,
+ @Region nvarchar (15)= null,
+@PostalCode nvarchar (10)= null,
+ @Country nvarchar (15)= null,
+ @Phone nvarchar (24)= null,
+@Fax nvarchar (24)= null
+as
+BEGIN
+ insert into Customers
+ values (
+ (
+
+@CustomerID,@CompanyName, @ContactName, @ContactTitle, @Address, @City, @Region, @PostalCode, @Country, @Phone,@Fax)
+
+END;
+
+--exec MusteiEkle_sp 'BLGDC', 'BilgeAdam';
+
+exec MusteriEke_sp @CustomerID='BLGDR', @companyName='Bilge Adam', @City='İstanbul';
+select *
+from Customers
+
+-- KOD ılw DB olusturma
+
+create database UsersDB
+
+go
+use UsersDB 
+go
+create table Users(
+Id int primary key identity (1,1),
+FirstName nvarchar (50) not null,
+LastName nvarchar (50) not null,
+Mail nvarchar (100) null,
+Phone nvarchar (24) null ,
+CreatedDate datetime default (getdate())
+);
+go
+insert into Users (Firstname ,Lastname,Mail,Phone) values
+('murat', 'vuranok','murat.vuranok@bilgeadam.com','+9021214587269'),
+('murat', 'vuranok','murat.vuranok@bilgeadam.com','+9021214587269'),
+('murat', 'vuranok','murat.vuranok@bilgeadam.com','+9021214587269'),
+('murat', 'vuranok','murat.vuranok@bilgeadam.com','+9021214587269'),
+('murat', 'vuranok','murat.vuranok@bilgeadam.com','+9021214587269'),
+('murat', 'vuranok','murat.vuranok@bilgeadam.com','+9021214587269')
+
+select* from Users
+
+
+--ODEV
+--Kullanicinin telefon numarasini alip formatlayan bir function
+--if else kullanimini arastir,
+ insert into Users (FirstName, LastName, Mail,Phone
+ values('murat', 'vuranok','murat.vuranok@bilgeadam.com', dbo.PhoneFormat ('+9021214587269'))
+
+
+
+ select * 
+ from Products as P JOIN Categories as C on P.ProductID=C.CategoryID                                                 
+                    JOIN Suppliers as S on S.SupplierID= P.SupplierID
+					JOIN [OrderDetails] as OD on OD.ProductID=P.ProductID
+					JOIN Orders AS O on O.OrderID=OD.OrderID
+					JOIN Employees as E on E.EmployeeID=O.EmployeeID
+					JOIN Customers As CM on CM.CustomerID=O.CustomerID
+					JOIN Shippers As SP on SP.ShipperID=O.ShipVia;
+
+--602 dekı ıkı tabloyu bagladık artık tek tablo oldu. sonra buna supplıersdakı supplıerıd eklemek ıcın devam joın ıle devam etmek lazım
